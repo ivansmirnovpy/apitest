@@ -1,0 +1,21 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id                 String   @id @default(cuid())
+  clientId           String   @map("client_id")
+  hashedClientSecret String   @map("hashed_client_secret")
+  backendUrl         String   @map("backend_url")
+  metadata           String   @map("metadata")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@unique([clientId], map: "unique_tenants_client_id")
+  @@map("tenants")
+}

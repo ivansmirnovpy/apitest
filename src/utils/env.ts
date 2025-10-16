@@ -10,6 +10,7 @@ const envSchema = z.object({
   PORT: z.coerce.number().int().min(0).max(65535).default(3000),
   HOST: z.string().default('0.0.0.0'),
   LOG_LEVEL: logLevelSchema.optional(),
+  DATABASE_URL: z.string().min(1).default('file:./dev.db'),
 });
 
 type EnvSchema = z.infer<typeof envSchema>;
