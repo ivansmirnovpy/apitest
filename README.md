@@ -39,11 +39,22 @@ npm install
 ├── src
 │   ├── app.ts           # Fastify application factory
 │   ├── server.ts        # Entry point for starting the server
+│   ├── decorators
+│   │   └── authenticate.ts # Fastify authentication decorator
+│   ├── errors
+│   │   └── http-error.ts   # Helper for consistent HTTP errors
 │   ├── plugins
-│   │   ├── env.ts       # Fastify plugin to expose validated environment variables
-│   │   └── README.md    # Guidance for creating additional plugins
+│   │   ├── env.ts          # Fastify plugin to expose validated environment variables
+│   │   ├── jwt.ts          # JWT configuration plugin
+│   │   └── prisma.ts       # Prisma client plugin
+│   ├── routes
+│   │   └── auth            # Authentication routes and helpers
+│   │       ├── index.ts
+│   │       ├── schemas.ts
+│   │       ├── service.ts
+│   │       └── types.ts
 │   └── utils
-│       └── env.ts       # Environment loader with dotenv + zod validation
+│       └── env.ts          # Environment loader with dotenv + zod validation
 ├── prisma
 │   ├── schema.prisma    # Prisma schema (SQLite in development)
 │   ├── migrations/      # Checked-in database migrations
@@ -123,6 +134,74 @@ Prisma is configured with a SQLite datasource for local development. The Prisma 
    ```
 
 > The migration SQL checked into `prisma/migrations` uses column types that are compatible with both SQLite and Postgres. For Postgres you can further evolve the `metadata` column to `JSONB` if you need native JSON operators.
+
+## Authentication
+
+The application includes JWT-based authentication for tenant access.
+
+### Environment Configuration
+
+Two additional environment variables are required for authentication:
+
+- `JWT_SECRET` – A secret key for signing JWTs (minimum 32 characters). This should be a secure random string in production.
+- `JWT_EXPIRES_IN` – Token expiration time (default: `15m`). Supports formats like `15m`, `1h`, `7d`, or raw seconds.
+
+### Login Flow
+
+Send a POST request to `/auth/login` with tenant credentials:
+
+```bash
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "client_id": "acme-corp",
+    "client_secret": "super-secret-value"
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "expires_in": 900,
+  "tenant": {
+    "id": "...",
+    "client_id": "acme-corp",
+    "backend_url": "https://api.acme.example/v1"
+  }
+}
+```
+
+### Protected Routes
+
+To protect a route, use the `authenticate` decorator:
+
+```typescript
+app.get(
+  '/protected/resource',
+  { onRequest: [app.authenticate] },
+  async (request) => {
+    // Access tenant info via request.tenant
+    const { tenantId, clientId, backendUrl } = request.tenant;
+    return { message: 'Authenticated', tenant: request.tenant };
+  }
+);
+```
+
+Make authenticated requests by including the JWT in the `Authorization` header:
+
+```bash
+curl http://localhost:3000/protected/me \
+  -H "Authorization: Bearer <access_token>"
+```
+
+### Error Responses
+
+- **400 Bad Request** – Invalid request payload
+- **401 Unauthorized** – Invalid credentials or expired/missing token
+- **403 Forbidden** – Tenant account is disabled
 
 ## Health Check
 

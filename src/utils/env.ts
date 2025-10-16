@@ -5,12 +5,22 @@ import { z } from 'zod';
 
 const logLevelSchema = z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']);
 
+const expiresInFormat = /^(\d+)(s|m|h|d)?$/;
+
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().int().min(0).max(65535).default(3000),
   HOST: z.string().default('0.0.0.0'),
   LOG_LEVEL: logLevelSchema.optional(),
   DATABASE_URL: z.string().min(1).default('file:./dev.db'),
+  JWT_SECRET: z.string().min(32),
+  JWT_EXPIRES_IN: z
+    .string()
+    .min(1)
+    .default('15m')
+    .refine((value) => expiresInFormat.test(value), {
+      message: 'JWT_EXPIRES_IN must be a number of seconds or duration string like 15m or 1h',
+    }),
 });
 
 type EnvSchema = z.infer<typeof envSchema>;

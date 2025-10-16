@@ -13,6 +13,7 @@ model Tenant {
   hashedClientSecret String   @map("hashed_client_secret")
   backendUrl         String   @map("backend_url")
   metadata           String   @map("metadata")
+  isDisabled         Boolean  @default(false) @map("is_disabled")
   createdAt          DateTime @default(now()) @map("created_at")
   updatedAt          DateTime @updatedAt @map("updated_at")
 

@@ -1,4 +1,4 @@
-import crypto from 'crypto';
+import bcrypt from 'bcrypt';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 async function main() {
   const clientId = 'acme-corp';
   const rawSecret = 'super-secret-value';
-  const hashedSecret = crypto.createHash('sha256').update(rawSecret).digest('hex');
+  const hashedSecret = await bcrypt.hash(rawSecret, 10);
 
   const metadata = JSON.stringify({
     name: 'Acme Corp',
@@ -21,12 +21,14 @@ async function main() {
       hashedClientSecret: hashedSecret,
       backendUrl: 'https://api.acme.example/v1',
       metadata,
+      isDisabled: false,
     },
     create: {
       clientId,
       hashedClientSecret: hashedSecret,
       backendUrl: 'https://api.acme.example/v1',
       metadata,
+      isDisabled: false,
     },
   });
 }
