@@ -1,5 +1,6 @@
 import Fastify, { FastifyError, FastifyInstance, FastifyReply, FastifyRequest } from 'fastify';
 import envPlugin from './plugins/env';
+import prismaPlugin from './plugins/prisma';
 import { Env } from './utils/env';
 
 export async function buildApp(env: Env): Promise<FastifyInstance> {
@@ -21,6 +22,7 @@ export async function buildApp(env: Env): Promise<FastifyInstance> {
   });
 
   await app.register(envPlugin, { env });
+  await app.register(prismaPlugin);
 
   app.addHook('onRequest', (request, _reply, done) => {
     request.log.info({ method: request.method, url: request.url }, 'Incoming request');
